@@ -1,0 +1,76 @@
+.event-container {
+    padding: 24px;
+    background: #ECECEC;
+ 
+  }
+  
+  nz-card {
+    width: 100%;
+  }
+
+
+  .event-icon {
+    width: 24px;  /* Ajusta el ancho */
+    height: 24px; /* Ajusta la altura */
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .event-icon:hover {
+    transform: scale(1.1); /* Efecto de zoom al pasar el mouse */
+  }
+
+  .modal-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .evidence-section img.evidence-image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  }
+  
+  .evidence-audio {
+    width: 100%;
+  }
+  
+  .form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .wide-select {
+    width: 100%;
+    min-width: 300px;
+    max-width: 600px; 
+  }
+  
+  .table-section {
+    overflow-x: auto;
+  }
+  
+  .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #ddd;
+  }
+  
+  .styled-table th,
+  .styled-table td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+  
+  .styled-table th {
+    background-color: #f0f0f0;
+  }
+
+  .table-section button[nz-button] {
+    margin-bottom: 10px;
+  }
