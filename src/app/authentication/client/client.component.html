@@ -23,14 +23,14 @@
                                         (ngModelChange)="onSelectValueType($event)">
                                         <nz-option *ngFor="let o of customersType$ | async" nzCustomContent
                                             [nzLabel]="o.name" [nzValue]="o.id">
-                                            <i nz-icon></i> {{ o.name }}
+                                           {{ o.name }}
                                         </nz-option>
                                     </nz-select>
                                     <nz-select formControlName="customerCountry" nzAllowClear
                                         nzPlaceHolder="Selecciona tu Estado" (ngModelChange)="onSelectValueCountry($event)">
                                         <nz-option *ngFor="let o of customersCountry$ | async" nzCustomContent
                                             [nzLabel]="o.name" [nzValue]="o.id">
-                                            <i nz-icon></i> {{ o.name }}
+                                            {{ o.name }}
                                         </nz-option>
                                     </nz-select>
                                 </nz-form-control>

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { UntypedFormBuilder,  UntypedFormGroup, Validators } from '@angular/forms';
 import { map, takeUntil } from 'rxjs/operators';
 import { Observable, Subject, Subscription } from 'rxjs';
@@ -7,6 +7,8 @@ import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { TermsComponent } from '../../pages/terms/terms.component';
 import { AuthenticationService } from '../../services/authentication.service';
 import { AngularFirestore, AngularFirestoreCollection } from '@angular/fire/compat/firestore';
+import { NzMessageService } from 'ng-zorro-antd/message';
+import { configuationsService } from '../../services/configurations.service';
 
 @Component({
   selector: 'app-client',
@@ -15,6 +17,7 @@ import { AngularFirestore, AngularFirestoreCollection } from '@angular/fire/comp
 })
 export class ClientComponent {
   signUpForm!: UntypedFormGroup;
+   configService = inject(configuationsService);
   customersType$: Observable<any[]> | undefined;
   customersCountry$: Observable<any[]> | undefined;
   custConsecutive$: Observable<any[]> | undefined;
@@ -28,6 +31,7 @@ export class ClientComponent {
   valueType : string = '';
 
 constructor( private modalService: NzModalService,
+  private messageService: NzMessageService,
   private fb: UntypedFormBuilder,
   private afs: AngularFirestore,
   public authService: AuthenticationService,
@@ -57,7 +61,6 @@ constructor( private modalService: NzModalService,
   ('customerType', ref => ref.where('active', '==', true).orderBy('name'));
   this.countryCollection = this.afs.collection<any>
   ('customerCountry', ref => ref.where('active', '==', true).orderBy('name'));
-
   this.consecutiveCollection = this.afs.collection<any>('custConsecutive');
 }
 
@@ -95,11 +98,9 @@ ngOnInit() {
         this.signUpForm.get('consecutiveField')?.setValue(nextIdStr);
         this.initialConsecutive = nextIdStr;        
       }
-
       return items;
     })
   );
-
   this.custConsecutive$.subscribe();
 }
 
@@ -112,19 +113,16 @@ ngOnInit() {
   }
 
   onSelectValueType(event: any) {    
-    this.valueType  = event;      
-   
+    this.valueType  = event;
     this.signUpForm.get('consecutiveField')?.setValue(this.valueType + this.valueCountry + this.initialConsecutive);
   }
 
   onSelectValueCountry(event: any) {
-    this.valueCountry  = event;  
-  
+    this.valueCountry  = event; 
     this.signUpForm.get('consecutiveField')?.setValue(this.valueType + this.valueCountry + this.initialConsecutive );
   }
 
-  submitForm(): void {
- 
+  submitForm(): void { 
     for (const i in this.signUpForm.controls) {
       this.signUpForm.controls[i].markAsDirty();
       this.signUpForm.controls[i].updateValueAndValidity();
@@ -133,7 +131,8 @@ ngOnInit() {
         this.signUpForm.get('customerCountry')?.setValue(this.valueCountry);
         this.signUpForm.get('customertype')?.setValue(this.valueType);
         this.signUpForm.get('consecutive')?.setValue(this.valueType + this.valueCountry + this.initialConsecutive );
-
+        this.signUpForm.get('active')?.setValue(true);
+      
       this.isLoadingOne = true;     
        this.authService.signUp(this.signUpForm.value, this.initialConsecutiveUID,  this.initialConsecutive).then(
         (result) => {
@@ -142,6 +141,10 @@ ngOnInit() {
           this.notification.create('error', 'Submit form error', error);
         }); 
     }
+  }
+
+  sendMessage(type: string, message: string): void {
+    this.messageService.create(type, message);
   }
 
 }

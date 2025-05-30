@@ -2,7 +2,7 @@ import { Component, inject, Inject, OnInit } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { Subscription } from 'rxjs';
-import { myProfileService } from '../../services/myprofile.service';
+import { myProfileService } from '../../services/myprofile.service'; 
 
 
 @Component({

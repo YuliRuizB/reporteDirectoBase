@@ -1,20 +1,24 @@
-import { Injectable, NgZone } from '@angular/core';
+import { inject, Injectable, NgZone } from '@angular/core';
 import { Auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, User, onAuthStateChanged } from 'firebase/auth';
 import { from, map, Observable, of, switchMap, take } from 'rxjs';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFirestore, AngularFirestoreDocument } from '@angular/fire/compat/firestore';
 import { Router } from '@angular/router';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
+import { NzMessageService } from 'ng-zorro-antd/message';
+import { configuationsService } from './configurations.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthenticationService {
   user: Observable<User | null>;
+  configService = inject(configuationsService);
 
   constructor(private afAuth: AngularFireAuth,
     private afs: AngularFirestore,
     private router: Router,
+     private messageService: NzMessageService,
     private ngZone: NgZone,
     private notification: NzNotificationService
   ) {
@@ -49,18 +53,16 @@ export class AuthenticationService {
       });
   }
 
-  async getAccessLevel(userId: string) {   
-
+  async getAccessLevel(userId: string) {    
     const userRef$ = await this.afs.collection('users').doc(userId);
     userRef$.snapshotChanges().pipe(
       take(1),
       map((a: any) => {
         const id = a.payload.id;
-        const data = a.payload.data() as any;
-
+        const data = a.payload.data() as any;        
         return { id: id, ...data }
       })
-    ).subscribe((user1: any) => {   
+    ).subscribe((user1: any) => {        
       if (user1.role != 'admin') {
         this.notification.create(
           'warning',
@@ -117,6 +119,7 @@ export class AuthenticationService {
       isBirthdayConfig: false,
       birthdayTitle: '',
       birthdayDescription: '',
+      active: true,
       status: form && form.status !== undefined ? form.status : 'active'
     };   
     
@@ -130,6 +133,7 @@ export class AuthenticationService {
 
       const userRef: AngularFirestoreDocument<any> = this.afs.doc(`users/${user.uid}`);
       const userData = {
+        active: true,
         uid: user.uid,
         email: user.email,
         phoneNumber: form && form.phoneNumber ? form.phoneNumber : null,
@@ -150,6 +154,17 @@ export class AuthenticationService {
         birthday: ''
       };
       
+      const evidenceType = {
+        active :true,
+        customerId: docId,
+        name: 'Otro'
+      }    
+      
+      this.configService.addEvidenceType(evidenceType).then(() => {        
+      }).catch((error: any) => {
+        this.sendMessage("error", "Ocurrió un error al agregar la evidencia: " + error);
+      });
+
       return userRef.set(userData, {
         merge: true
       }).then((resultAdd) => {
@@ -188,5 +203,11 @@ export class AuthenticationService {
       this.router.navigate(['/authentication/login']);
     });
   }
+
+
+  sendMessage(type: string, message: string): void {
+    this.messageService.create(type, message);
+  }
+
 
 }
