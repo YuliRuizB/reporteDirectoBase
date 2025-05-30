@@ -309,8 +309,7 @@ export class EvidenceComponent {
     this.comments= "";
     this.cost="";
     this.selectedResponseUid = "";
-    this.selectedStatus = "";
-    this.selectedData = [];
+    this.selectedStatus = "";  
   }
 
   saveNewResponse() {
