@@ -64,7 +64,9 @@ export class MapComponent {
         };
       }))
     ).subscribe((evidenceList: Evidence[]) => {
-      this.listOfData = evidenceList;    
+      this.listOfData = evidenceList; 
+      this.filteredData = this.listOfData;
+      this.filteredDataFilter = this.filteredData;    
       this.updatePendingCount();
       
     });
