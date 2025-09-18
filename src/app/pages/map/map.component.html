@@ -22,15 +22,23 @@
         </div>
     </div>
 </nz-page-header>
-<div>
+<div style="margin-bottom: 20px;">
     <h5>Filtros</h5>
-    <nz-select class="wide-select" style="width: 300px; margin-bottom: 10px;" [(ngModel)]="selectEvidenceType"
-        (ngModelChange)="selectEvidenceTypeOption()" nzPlaceHolder="Selecciona un Tipo de Evidencia">
-        <nz-option [nzValue]="'Todos'" [nzLabel]="'Todos'" title="Todos"></nz-option>
-        <nz-option *ngFor="let evType of evidenceTypeList" [nzValue]="evType.uid" [nzLabel]="evType.name"
-            [title]="evType.name">
-        </nz-option>
-    </nz-select>
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <nz-select class="wide-select"  [(ngModel)]="selectWorkEvidenceType" (ngModelChange)="applyFilters()"
+            nzPlaceHolder="Selecciona un Tipo de Proyecto">
+            <nz-option [nzValue]="'Todos'" [nzLabel]="'Todos'"></nz-option>
+            <nz-option *ngFor="let evType of evidenceWorkTypeList" [nzValue]="evType.uid" [nzLabel]="evType.name">
+            </nz-option>
+        </nz-select>
+
+        <nz-select class="wide-select"  [(ngModel)]="selectEvidenceType" (ngModelChange)="applyFilters()"
+            nzPlaceHolder="Selecciona un Tipo de Evidencia">
+            <nz-option [nzValue]="'Todos'" [nzLabel]="'Todos'"></nz-option>
+            <nz-option *ngFor="let evType of evidenceTypeList" [nzValue]="evType.uid" [nzLabel]="evType.name">
+            </nz-option>
+        </nz-select>
+    </div>
 </div>
 <div>
     <google-map height="500px" width="100%" [center]="center" [zoom]="zoom">
@@ -42,10 +50,10 @@
         <map-info-window #infoWindow>
             <strong>Título:</strong> {{ selectedMarker?.title }}<br />
             <strong> Descripcion: </strong>{{ selectedMarker?.description }} <br>
-            <strong>Tipo:</strong> {{ selectedMarker?.evidenceTypeName }}<br />            
+            <strong>Tipo:</strong> {{ selectedMarker?.evidenceTypeName }}<br />
             <strong>Colonia: </strong>{{ selectedMarker?.colony }}<br />
             <strong>Estado: </strong>{{ selectedMarker?.state }} <br>
-            <strong>Fecha:</strong> {{ formatDate(selectedMarker?.dateTimeStamp)  | date: 'mediumDate'}} <br>            
+            <strong>Fecha:</strong> {{ formatDate(selectedMarker?.dateTimeStamp) | date: 'mediumDate'}} <br>
         </map-info-window>
     </google-map>
 </div>

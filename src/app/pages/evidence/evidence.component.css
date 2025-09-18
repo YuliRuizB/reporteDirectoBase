@@ -1,58 +1,90 @@
 .event-container {
-    padding: 24px;
-    background: #ECECEC;
-    min-height: 100vh; 
-  }
-  
-  nz-card {
-    width: 100%;
-  }
+  padding: 24px;
+  background: #ECECEC;
+  min-height: 100vh;
+}
 
-  .modal-content {
-    padding: 20px;
-    width: 100%;
-  }
-  
-  .evidence-section {
-    margin-bottom: 20px; /* Espaciado entre secciones */
-    text-align: center;
-  }
-  
-  .evidence-image {
-    width: 100%;
-    max-height: 400px; /* Ajusta el tamaño máximo de la imagen */
-    object-fit: contain; /* Asegura que la imagen se ajuste sin deformarse */
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  .evidence-audio {
-    width: 100%;
-    margin-top: 10px;
-  }
+nz-card {
+  width: 100%;
+}
 
+.modal-content {
+  padding: 20px;
+  width: 100%;
+}
+
+.evidence-section {
+  margin-bottom: 20px;
+  /* Espaciado entre secciones */
+  text-align: center;
+}
+
+/* .evidence-image {
+  width: 100%;
+  max-height: 400px;
+ 
+  object-fit: contain;
+ 
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+ */
+.evidence-audio {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.button-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  /* Espaciado entre botones */
+  justify-content: center;
+}
+
+button {
+  min-width: 120px;
+  /* Para que los botones sean uniformes */
+  text-align: center;
+}
+
+/* Colores personalizados */
+.pending-btn {
+  background-color: rgb(128, 0, 75);
+  color: white;
+}
+
+.review-btn {
+  background-color: rgb(124, 128, 0);
+  color: white;
+}
+
+.approved-btn {
+  background-color: blueviolet;
+  color: white;
+}
+
+.finalized-btn {
+  background-color: green;
+  color: white;
+}
+
+/* Media Query para pantallas pequeñas */
+@media (max-width: 600px) {
   .button-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px; /* Espaciado entre botones */
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
   }
-  
-  button {
-    min-width: 120px; /* Para que los botones sean uniformes */
-    text-align: center;
-  }
-  
-  /* Colores personalizados */
-  .pending-btn { background-color: rgb(128, 0, 75); color: white; }
-  .review-btn { background-color: rgb(124, 128, 0); color: white; }
-  .approved-btn { background-color: blueviolet; color: white; }
-  .finalized-btn { background-color: green; color: white; }
-  
-  /* Media Query para pantallas pequeñas */
-  @media (max-width: 600px) {
-    .button-container {
-      flex-direction: column;
-      align-items: center;
-    }
-  }
+}
+
+ .evidence-image {
+  border: 2px solid black;
+   width: 80%;
+  object-fit: contain;
+  height: 50%;
+} 
+
+.wide-range-picker {
+  flex: 1 1 300px; /* crece si hay espacio */
+  min-width: 200px;
+}

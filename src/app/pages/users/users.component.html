@@ -4,15 +4,24 @@
     <button nz-button nzType="primary" (click)="exportToExcel()">📥 Exportar a Excel</button>
   </div>
 </nz-page-header>
-
+<div>
+  <nz-input-group [nzSuffix]="suffixIconSearch" style="width: 300px;" class="mb-3">
+    <input type="text" nz-input placeholder="Buscar por nombre" [(ngModel)]="searchValue" (input)="search()" />
+  </nz-input-group>
+  <ng-template #suffixIconSearch>
+    <i nz-icon nzType="search"></i>
+  </ng-template>
+</div>
 <div class="table-container">
-  <nz-table #sortTable [nzData]="listOfData" nzTableLayout="fixed" [nzScroll]="{ x: '100%' }">
+ <nz-table #sortTable [nzData]="filteredData" nzTableLayout="fixed" [nzScroll]="{ x: '100%' }">
+
     <thead>
       <tr>
         <th *ngFor="let column of listOfColumn" [nzFilters]="column.filters" [nzFilterFn]="column.filterFn"
           [nzSortFn]="column.compare" [nzSortPriority]="column.priority">
           {{ column.title }}
         </th>
+        <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -26,7 +35,33 @@
         <td>{{ data.age }}</td>
         <td>{{ data.town }}</td>
         <td>{{ data.state }}</td>
+        <td>{{ data.role }}</td>
+        <td>
+          <button nz-button nzType="link" (click)="openEditModal(data)">
+            Editar
+          </button>
+        </td>
       </tr>
     </tbody>
   </nz-table>
 </div>
+<nz-modal [(nzVisible)]="isEditModalVisible" nzTitle="Editar usuario" [nzContent]="modalContent"
+  [nzFooter]="modalFooter" (nzOnCancel)="handleCancel()" (nzOnOk)="updateUser()" [nzOkText]="'Actualizar'"
+  [nzCancelText]="'Cancelar'">
+  <ng-template #modalContent>
+    <ng-container *ngIf="selectedUser">
+      <p><strong>Nombre:</strong> {{ selectedUser.name }} {{ selectedUser.lastName }}</p>
+
+      <label for="role">Nuevo Rol:</label>
+      <nz-select id="role" style="width: 100%" [(ngModel)]="selectedUser.role" nzPlaceHolder="Selecciona un rol">
+        <nz-option nzValue="admin" nzLabel="Admin"></nz-option>
+        <nz-option nzValue="user" nzLabel="User"></nz-option>
+      </nz-select>
+    </ng-container>
+  </ng-template>
+  <ng-template #modalFooter>
+    <button nz-button (click)="handleCancel()">Cancelar</button>
+    <button nz-button nzType="primary" (click)="updateUser()">Guardar</button>
+  </ng-template>
+
+</nz-modal>

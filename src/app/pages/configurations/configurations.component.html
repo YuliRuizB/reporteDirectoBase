@@ -20,7 +20,7 @@
         </ng-template>
     </nz-card>
     <nz-card style="width:600px;" [nzBordered]="false" nzTitle="Tipos de Evidencias">      
-        <nz-select  style="width:400px;" class="wide-select" [(ngModel)]="selectedUid" (ngModelChange)="selectInfo()">
+        <nz-select  style="width:400px;" class="wide-select" [(ngModel)]="selectedUid">
             <nz-option *ngFor="let evidence of evidenceList" [nzValue]="evidence.uid" [nzLabel]="evidence.name"
                 [title]="evidence.name">
             </nz-option></nz-select>
@@ -36,10 +36,29 @@
             <i nz-icon nzType="plus"></i> Editar </button>
         </div>
     </nz-card>
+
+     <nz-card style="width:600px;" [nzBordered]="false" nzTitle="Proyecto">      
+        <nz-select  style="width:400px;" class="wide-select" [(ngModel)]="selectWorkUid">
+            <nz-option *ngFor="let work of workList" [nzValue]="work.uid" [nzLabel]="work.name"
+                [title]="work.name">
+            </nz-option></nz-select>
+            <br>
+        <!-- Botón para agregar nueva respuesta -->
+         <div style="margin-top: 10px;">
+
+        <button nz-button nzType="primary" style="width: 10px; margin-top: 5px; margin-left: 3px;"
+            (click)="openAddWorkModal()">
+            <i nz-icon nzType="plus"></i> Agregar </button>
+        <button nz-button nzType="default" style="width: 10px; margin-top: 3px; margin-left: 3px;"
+            (click)="openEditWorkModal()">
+            <i nz-icon nzType="plus"></i> Editar </button>
+        </div>
+    </nz-card>
 </div>
 
 
-<nz-modal [(nzVisible)]="isModalVisible" nzTitle="Agregar Tipo de Evidencia" [nzContent]="modalContent"
+<nz-modal [(nzVisible)]="isModalVisible" nzTitle="Agregar Tipo de Evidencia" 
+[nzContent]="modalContent"
     [nzFooter]="modalFooter" (nzOnCancel)="handleAddCancel()">
     <!-- Contenido del modal -->
     <ng-template #modalContent>
@@ -53,6 +72,25 @@
     <ng-template #modalFooter>
         <button nz-button (click)="handleAddCancel()">Cancelar</button>
         <button nz-button nzType="primary" (click)="saveRecord()">Guardar</button>
+    </ng-template>
+
+</nz-modal>
+
+<nz-modal [(nzVisible)]="isModalWorkVisible" nzTitle="Agregar Tipo de Proyecto"
+ [nzContent]="modalContent1"
+    [nzFooter]="modalFooter2" (nzOnCancel)="handleAddCancel()">
+    <!-- Contenido del modal -->
+    <ng-template #modalContent1>
+        <div class="modal-content1">
+            <label>Título</label>
+            <input nz-input [(ngModel)]="addEvidenceWork" placeholder="Agregar Nombre de Proyecto" />
+        </div>
+    </ng-template>
+
+    <!-- Footer del modal -->
+    <ng-template #modalFooter2>
+        <button nz-button (click)="handleAddCancel()">Cancelar</button>
+        <button nz-button nzType="primary" (click)="saveRecordWork()">Guardar</button>
     </ng-template>
 
 </nz-modal>
@@ -72,6 +110,25 @@
         <button nz-button (click)="handleAddCancel()">Cancelar</button>
         <button nz-button nzDanger (click)="deleteResponse()">Borrar</button>
         <button nz-button nzType="primary" (click)="saveRecordE()">Guardar</button>
+    </ng-template>
+
+</nz-modal>
+
+<nz-modal [(nzVisible)]="isModalWorkVisibleE" nzTitle="Editar Tipo de Proyecto" [nzContent]="modalContentE1"
+    [nzFooter]="modalFooterE2" (nzOnCancel)="handleAddCancel()">
+    <!-- Contenido del modal -->
+    <ng-template #modalContentE1>
+        <div class="modal-content">
+            <label>Título</label>
+            <input nz-input [(ngModel)]="editWork" placeholder="Editar nombre de Proyecto" />
+        </div>
+    </ng-template>
+
+    <!-- Footer del modal -->
+    <ng-template #modalFooterE2>
+        <button nz-button (click)="handleAddCancel()">Cancelar</button>
+        <button nz-button nzDanger (click)="deleteResponseWork()">Borrar</button>
+        <button nz-button nzType="primary" (click)="saveRecordWorkE()">Guardar</button>
     </ng-template>
 
 </nz-modal>

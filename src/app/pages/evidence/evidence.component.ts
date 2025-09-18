@@ -1,14 +1,18 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { evidenceService } from '../../services/evidence.service';
 import { AuthenticationService } from '../../services/authentication.service';
 import { lastValueFrom, map, take } from 'rxjs';
 import { Evidence } from '../../interface/evidence.type';
+import { AngularFireStorage } from '@angular/fire/compat/storage';
 import { myProfileService } from '../../services/myprofile.service';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { notify } from '../../interface/notify.type';
 import { NotificationService } from '../../services/notifications.service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { jsPDF } from 'jspdf';
+import { getStorage, ref, getDownloadURL } from 'firebase/storage';
+
 @Component({
   selector: 'app-evidence',
   templateUrl: './evidence.component.html',
@@ -20,6 +24,9 @@ export class EvidenceComponent {
   authService = inject(AuthenticationService);
   myprofileService = inject(myProfileService);
   user: any;
+  dataImages: any[] = [];
+  dataImagesExport: any[] = [];
+  effect = 'scrollx';
   totEvidence: number = 0;
   totEvidencePending: number = 0;
   totEvidenceReview: number = 0;
@@ -34,16 +41,18 @@ export class EvidenceComponent {
   title: string = '';
   isNewResponseModalVisible = false;
   selectedResponseUid: string = '';
-  selectEvidenceType : string = 'Todos';
+  selectEvidenceType: string = 'Todos';
+  selectWorkEvidenceType: string = 'Todos';
   description: string = '';
   private isSending = false;
   responseList: any = [];
   evidenceTypeList: any = [];
-  comments: string= '';
+  evidenceWorkTypeList: any = [];
+  comments: string = '';
   cost: string = '';
-  notifyList :any[] =[];
+  notifyList: any[] = [];
+  dateRange: Date[] | null = null;
 
-  
   statusList = [
     { value: 'PENDING', label: 'Pendiente' },
     { value: 'REVIEW', label: 'En Revisión' },
@@ -60,26 +69,27 @@ export class EvidenceComponent {
     uid: '',
     description: '',
     status: '',
-    comments:'',
+    comments: '',
     cost: ''
   };
   isEditModalVisible = false;
   editResponse: any = {};
 
-  constructor(private message: NzMessageService, private notificationService: NotificationService) {
+  constructor(private message: NzMessageService, private storage: AngularFireStorage, private notificationService: NotificationService, private cdr: ChangeDetectorRef) {
 
     this.authService.user.subscribe((user: any) => {
       if (user) {
         this.user = user;
         this.loadEvidences(this.user.customerId);
         this.LoadEvidenceType(this.user.customerId);
+        this.LoadEvidenceWorkType(this.user.customerId);
       } else {
         this.user = [];
       }
     });
   }
 
-  LoadEvidenceType(customerId : string) {    
+  LoadEvidenceType(customerId: string) {
     this.evidenceService.getEvidenceType(customerId).pipe(
       map((actions: any) => actions.map((a: any) => {
         const id = a.payload.doc.id;
@@ -89,8 +99,23 @@ export class EvidenceComponent {
           ...data
         };
       }))
-    ).subscribe((evidenceList: Evidence[]) => {
-      this.evidenceTypeList = evidenceList;     
+    ).subscribe((evidenceList: any[]) => {
+      this.evidenceTypeList = evidenceList;
+    });
+  }
+
+  LoadEvidenceWorkType(customerId: string) {
+    this.evidenceService.getEvidenceWorkType(customerId).pipe(
+      map((actions: any) => actions.map((a: any) => {
+        const id = a.payload.doc.id;
+        const data = a.payload.doc.data() as any;
+        return {
+          id,
+          ...data
+        };
+      }))
+    ).subscribe((evidenceList: any[]) => {
+      this.evidenceWorkTypeList = evidenceList;
     });
   }
 
@@ -147,15 +172,29 @@ export class EvidenceComponent {
   }
 
   openModal(data: any): void {
-    this.selectedStatus= "";
+    this.selectedStatus = "";
     this.selectedResponseUid = "";
     this.title = "";
     this.description = "";
     this.comments = "";
-    this.cost=  "";
+    this.cost = "";
     this.selectedData = data;
-    this.isVisible = true;
 
+    this.evidenceService.getEvidenceImages(data.idDoc).pipe(
+      map((actions: any) => actions.map((a: any) => {
+        const id = a.payload.doc.id;
+        const data = a.payload.doc.data() as any;
+        return {
+          id,
+          ...data
+        };
+      }))).subscribe((data: any) => {
+        this.dataImages = data;
+        setTimeout(() => this.cdr.detectChanges(), 0);
+      });
+
+
+    this.isVisible = true;
     this.callNotifyEvidence(this.selectedData.idDoc);
   }
 
@@ -176,7 +215,7 @@ export class EvidenceComponent {
         };
       }))
     ).subscribe((notify: any[]) => {
-      this.notifyList = notify;     
+      this.notifyList = notify;
     });
   }
 
@@ -199,24 +238,24 @@ export class EvidenceComponent {
         uidUser: this.selectedData.uid,
         comments: this.comments,
         cost: this.cost,
-        evidenceType :this.selectedData.evidenceType ? this.selectedData.evidenceType : '',
-        evidenceId :this.selectedData.idDoc ? this.selectedData.idDoc : '',
+        evidenceType: this.selectedData.evidenceType ? this.selectedData.evidenceType : '',
+        evidenceId: this.selectedData.idDoc ? this.selectedData.idDoc : '',
         status: this.selectedStatus
       };
-      this.evidenceService.addNotify(noty);      
-      this.evidenceService.updateStatusEvidence(this.selectedData.id, this.selectedStatus);     
-    
+      this.evidenceService.addNotify(noty);
+      this.evidenceService.updateStatusEvidence(this.selectedData.id, this.selectedStatus);
+
       const evidenceId = await this.evidenceService.findEvidenceDocId(this.selectedData.uid, this.selectedData.id);
-      this.evidenceService.updateStatusEvidenceUser(this.selectedData.uid,evidenceId,this.selectedStatus);
+      this.evidenceService.updateStatusEvidenceUser(this.selectedData.uid, evidenceId, this.selectedStatus);
       this.myprofileService.getUserData(this.selectedData.uid)
-      .pipe(take(1))
-      .subscribe((user: any) => {
-        if (user?.token) {
-          this.enviarNotificacion(user.token, this.title, this.description);
-        }
-      });
+        .pipe(take(1))
+        .subscribe((user: any) => {
+          if (user?.token) {
+            this.enviarNotificacion(user.token, this.title, this.description);
+          }
+        });
       this.isVisible = false;
-     
+
     }
   }
 
@@ -236,7 +275,7 @@ export class EvidenceComponent {
 
   updateDefaultMessage(data: any) {
     const caseTitle = data.title ? `"${data.title}"` : "sin título";
-    const name  = this.selectedData.name  +' ' + this.selectedData.lastName + ' ' + this. selectedData.secondLastName 
+    const name = this.selectedData.name + ' ' + this.selectedData.lastName + ' ' + this.selectedData.secondLastName
     if (this.selectedStatus === 'REVIEW') {
       this.title = `Hola, ${name} ,  El caso ${caseTitle} ha cambiado a estatus en Revisión`;
     } else if (this.selectedStatus === 'APPROVED') {
@@ -258,7 +297,7 @@ export class EvidenceComponent {
         };
       }))
     ).subscribe((list: any) => {
-      this.responseList = list;     
+      this.responseList = list;
     });
   }
 
@@ -269,13 +308,12 @@ export class EvidenceComponent {
     }
   }
 
-  selectEvidenceTypeOption() {  
-    if( this.selectEvidenceType === "Todos") {
-      this.filteredData =  this.filteredDataFilter;
-    } else {
-      this.filteredData = this.filteredDataFilter.filter((r: any) => r.evidenceTypeUid === this.selectEvidenceType);
+  selectEvidenceTypeOption() {
+    this.applyFilters();
+  }
 
-    }
+  selectWorkEvidenceTypeOption() {
+    this.applyFilters();
   }
 
   openNewResponseModal(data: any) {
@@ -287,7 +325,7 @@ export class EvidenceComponent {
       uid: '',
       description: '',
       status: this.selectedStatus,
-      comments:'',
+      comments: '',
       cost: ''
     };
   }
@@ -306,10 +344,10 @@ export class EvidenceComponent {
     };
     this.description = "";
     this.title = "";
-    this.comments= "";
-    this.cost="";
+    this.comments = "";
+    this.cost = "";
     this.selectedResponseUid = "";
-    this.selectedStatus = "";  
+    this.selectedStatus = "";
   }
 
   saveNewResponse() {
@@ -330,26 +368,26 @@ export class EvidenceComponent {
       uid: '',
       description: '',
       status: this.selectedStatus,
-      comments:"",
-      cost:""
+      comments: "",
+      cost: ""
     };
   }
   openEditResponseModal() {
     const selected = this.responseList.find((r: any) => r.uid === this.selectedResponseUid);
-  
+
     if (!selected) {
       this.message.warning('Primero selecciona una respuesta para editar.');
       return;
-    }  
+    }
     this.editResponse = { ...selected };
     this.isEditModalVisible = true;
   }
-  
+
   handleEditCancel() {
     this.isEditModalVisible = false;
     this.editResponse = {};
   }
-  
+
   saveEditedResponse() {
     // Aquí implementas la lógica de guardar
     if (this.editResponse.uid) {
@@ -359,26 +397,28 @@ export class EvidenceComponent {
       }).then(() => {
         this.message.success('Respuesta actualizada correctamente');
         this.isEditModalVisible = false;
-        this.updateDefaultMessage(this.selectedData); 
+        this.updateDefaultMessage(this.selectedData);
       }).catch(() => {
         this.message.error('Error al actualizar la respuesta');
       });
     }
   }
-  
+
   deleteResponse() {
     if (this.editResponse.uid) {
       this.evidenceService.updateStatusResponseList(this.editResponse.uid).then(() => {
         this.message.success('Registro dado de baja');
         this.isEditModalVisible = false;
         this.selectedResponseUid = "";
-        this.updateDefaultMessage(this.selectedData); 
+        this.updateDefaultMessage(this.selectedData);
       });
     }
   }
 
-  exportToExcel(){
-   const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(this.filteredData);
+  exportToExcel() {
+
+    this.evidenceService.getEvidenceImages
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(this.filteredData);
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Evidencias');
 
@@ -391,7 +431,119 @@ export class EvidenceComponent {
   getFormattedDate(timestamp: any): string {
     if (!timestamp || !timestamp.seconds) return '';
     const date = new Date(timestamp.seconds * 1000);
-    return date.toLocaleDateString(); 
+    return date.toLocaleDateString();
   }
-  
+
+  applyFilters() {
+
+    this.filteredData = this.filteredDataFilter.filter((item: any) => {
+      const matchEvidence =
+        this.selectEvidenceType === "Todos" || item.evidenceTypeUid === this.selectEvidenceType;
+
+      const matchWork =
+        this.selectWorkEvidenceType === "Todos" || item.evidenceWorkTypeUid === this.selectWorkEvidenceType;
+
+      let matchDate = true;
+      if (this.dateRange && this.dateRange.length === 2) {
+        const start = this.dateRange[0];
+        const end = this.dateRange[1];
+
+        // Convertir el string ISO a Date
+        const itemDate = item.date ? new Date(item.date) : null;
+        if (itemDate) {
+          // Comparar fechas (sin incluir la hora)
+          matchDate = itemDate >= start && itemDate <= end;
+        }
+      }
+
+      return matchEvidence && matchWork && matchDate;
+    });
+  }
+  async exportToPDF() {
+    const doc = new jsPDF();
+
+    for (let i = 0; i < this.filteredData.length; i++) {
+      const evidence = this.filteredData[i];
+
+      // Agregar información de la evidencia
+      doc.setFontSize(12);
+      doc.text(`Título: ${evidence.title}`, 10, 10);
+      doc.text(`Descripción: ${evidence.description || '-'}`, 10, 20);
+      doc.text(`Fecha: ${evidence.date ? evidence.date.toString() : '-'}`, 10, 30);
+      doc.text(`Nombre: ${evidence.name || '-'}`, 10, 40);
+      doc.text(`Colonia: ${evidence.colony || '-'}`, 10, 50);
+
+      // Si la evidencia tiene idDoc, obtener todas las imágenes
+      if (evidence.idDoc) {
+        const images = await this.getEvidenceImagesAsync(evidence.idDoc); // 🔹 ahora espera
+
+        let yPosition = 60;
+        for (const img of images) {
+          if (img.imageUrl) {
+            try {
+              const imgData = await this.getImageData(img.imageUrl);
+              doc.addImage(imgData, 'JPEG', 10, yPosition, 180, 100);
+              yPosition += 110;
+
+              // Si llegamos al final de la página, crear nueva
+              if (yPosition + 100 > 290) {
+                doc.addPage();
+                yPosition = 10;
+              }
+            } catch (err) {
+              console.error('Error cargando imagen:', err);
+            }
+          }
+        }
+      }
+
+      // Si no es la última evidencia, agregar nueva página
+      if (i < this.filteredData.length - 1) {
+        doc.addPage();
+      }
+    }
+
+    doc.save('Evidencias.pdf');
+  }
+
+  // Convertir observable en promesa
+  private getEvidenceImagesAsync(evidenceId: string): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      this.evidenceService.getEvidenceImages(evidenceId).pipe(
+        map((actions: any) =>
+          actions.map((a: any) => {
+            const id = a.payload.doc.id;
+            const data = a.payload.doc.data() as any;
+            return { id, ...data };
+          })
+        )
+      ).subscribe({
+        next: (data: any[]) => resolve(data),
+        error: (err) => reject(err)
+      });
+    });
+  }
+
+
+  private async getImageData(path: string): Promise<string> {
+    try {
+
+      // ⚡ Usa refFromURL si tienes un URL completo
+      const ref = this.storage.refFromURL(path);
+      const downloadURL = await ref.getDownloadURL().toPromise();
+
+      const response = await fetch(downloadURL);
+      const blob = await response.blob();
+
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      console.error('Error obteniendo imagen desde Firebase Storage', err);
+      throw err;
+    }
+  }
 }

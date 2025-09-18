@@ -27,12 +27,16 @@ export class MapComponent {
   totEvidenceReject: number = 0;
   totEvidenceFinalize: number = 0;
   selectEvidenceType: string = 'Todos';
+  selectWorkEvidenceType: string = 'Todos';
+  allData: Evidence[] = [];
+  currentStatus: string = 'ALL';
   filteredData: Evidence[] = [];
   filteredDataFilter: Evidence[] = [];
+  evidenceWorkTypeList: any = [];
   user: any;
   @ViewChild(MapInfoWindow) infoWindow!: MapInfoWindow;
   @ViewChildren(MapMarker) mapMarkers!: QueryList<MapMarker>
-  
+
 
   constructor(private message: NzMessageService, private notificationService: NotificationService) {
 
@@ -41,6 +45,7 @@ export class MapComponent {
         this.user = user;
         this.loadEvidences(this.user.customerId);
         this.LoadEvidenceType(this.user.customerId);
+        this.LoadEvidenceWorkType(this.user.customerId);
       } else {
         this.user = [];
       }
@@ -51,7 +56,21 @@ export class MapComponent {
     this.filteredData = this.listOfData; // Mostrar todos al inicio
     this.filteredDataFilter = this.listOfData;
   }
-  
+
+  LoadEvidenceWorkType(customerId: string) {
+    this.evidenceService.getEvidenceWorkType(customerId).pipe(
+      map((actions: any) => actions.map((a: any) => {
+        const id = a.payload.doc.id;
+        const data = a.payload.doc.data() as any;
+        return {
+          id,
+          ...data
+        };
+      }))
+    ).subscribe((evidenceList: any[]) => {
+      this.evidenceWorkTypeList = evidenceList;
+    });
+  }
 
   loadEvidences(customerId: string) {
     this.evidenceService.getEvidence(customerId).pipe(
@@ -64,11 +83,12 @@ export class MapComponent {
         };
       }))
     ).subscribe((evidenceList: Evidence[]) => {
-      this.listOfData = evidenceList; 
+      this.listOfData = evidenceList;
       this.filteredData = this.listOfData;
-      this.filteredDataFilter = this.filteredData;    
+      this.allData = evidenceList;
+      this.filteredDataFilter = this.filteredData;
       this.updatePendingCount();
-      
+
     });
   }
 
@@ -86,43 +106,39 @@ export class MapComponent {
       this.evidenceTypeList = evidenceList;
     });
   }
-  selectEvidenceTypeOption() {      
-    this.filteredData = this.filteredDataFilter.filter((r: any) => 
+  selectEvidenceTypeOption() {
+    this.filteredData = this.filteredDataFilter.filter((r: any) =>
       r.evidenceTypeUid.trim() === this.selectEvidenceType.trim()
-    );  
+    );
   }
-  filterFinalized(): void {
-    this.filteredData = this.listOfData.filter(item => item.status === 'FINALIZED');
-    this.filteredDataFilter = this.filteredData;
-  }
-  filterTot(): void {
-    this.selectEvidenceType = 'Todos';
-    this.filteredData = this.listOfData;
-    this.filteredDataFilter = this.filteredData;
-  }
-
   filterPending(): void {
-    this.selectEvidenceType = 'Todos';
-    this.filteredData = this.listOfData.filter(item => item.status === 'PENDING');
-    this.filteredDataFilter = this.filteredData;
-  }
-
-  filterReview(): void {
-    this.selectEvidenceType = 'Todos';
-    this.filteredData = this.listOfData.filter(item => item.status === 'REVIEW');
-    this.filteredDataFilter = this.filteredData;
+    this.currentStatus = 'PENDING';
+    this.applyFilters();
   }
 
   filterApproved(): void {
-    this.selectEvidenceType = 'Todos';
-    this.filteredData = this.listOfData.filter(item => item.status === 'APPROVED');
-    this.filteredDataFilter = this.filteredData;
+    this.currentStatus = 'APPROVED';
+    this.applyFilters();
+  }
+
+  filterReview(): void {
+    this.currentStatus = 'REVIEW';
+    this.applyFilters();
   }
 
   filterReject(): void {
-    this.selectEvidenceType = 'Todos';
-    this.filteredData = this.listOfData.filter(item => item.status === 'REJECT');
-    this.filteredDataFilter = this.filteredData;
+    this.currentStatus = 'REJECT';
+    this.applyFilters();
+  }
+
+  filterFinalized(): void {
+    this.currentStatus = 'FINALIZED';
+    this.applyFilters();
+  }
+
+  filterTot(): void {
+    this.currentStatus = 'ALL';
+    this.applyFilters();
   }
 
   updatePendingCount(): void {
@@ -147,17 +163,32 @@ export class MapComponent {
 
   formatDate(value: any): Date | null {
     if (!value) return null;
-  
+
     // Firestore Timestamp
     if (value.toDate) return value.toDate();
-  
+
     // Si ya es Date
     if (value instanceof Date) return value;
-  
+
     // Si es string o número
     const parsed = new Date(value);
     return isNaN(parsed.getTime()) ? null : parsed;
   }
 
+  applyFilters() {
+    this.filteredData = this.allData.filter((r: any) => {
+      const matchEvidenceType =
+        this.selectEvidenceType === 'Todos' ||
+        r.evidenceTypeUid?.trim() === this.selectEvidenceType?.trim();
 
+      const matchWorkEvidenceType =
+        this.selectWorkEvidenceType === 'Todos' ||
+        r.evidenceWorkTypeUid?.trim() === this.selectWorkEvidenceType?.trim();
+
+      const matchStatus =
+        this.currentStatus === 'ALL' || r.status === this.currentStatus;
+
+      return matchEvidenceType && matchWorkEvidenceType && matchStatus;
+    });
+  }
 }

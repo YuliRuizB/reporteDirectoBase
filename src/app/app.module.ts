@@ -89,6 +89,7 @@ import { ConfigurationsComponent } from './pages/configurations/configurations.c
 import { SuppliesComponent } from './pages/supplies/supplies.component';
 import { MapComponent } from './pages/map/map.component';
 import { GoogleMapsModule } from '@angular/google-maps';
+import { NzCarouselModule } from 'ng-zorro-antd/carousel';
 
 
 registerLocaleData(es);
@@ -184,7 +185,8 @@ registerLocaleData(es);
     NzTimePickerModule,
     NzPopconfirmModule,
     HttpClientModule ,
-    GoogleMapsModule
+    GoogleMapsModule,
+    NzCarouselModule
   ],
   providers: [
     { provide: NZ_I18N, useValue: es_ES },

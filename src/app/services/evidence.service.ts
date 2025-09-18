@@ -16,9 +16,20 @@ export class evidenceService {
       ref => ref.where('customerId', '==', customerId));
     return accounts.snapshotChanges();
   }
+   
+  getEvidenceImages( evidenceId:string) {
+    const accounts = this.afs.collection('evidence').doc(evidenceId).collection('images');
+    return accounts.snapshotChanges();
+  }
 
   getEvidenceType(customerId: string) {
     const accounts = this.afs.collection('evidenceType',
+      ref => ref.where('customerId', '==', customerId));
+    return accounts.snapshotChanges();
+  }
+
+  getEvidenceWorkType(customerId: string) {
+    const accounts = this.afs.collection('workEvidenceType',
       ref => ref.where('customerId', '==', customerId));
     return accounts.snapshotChanges();
   }

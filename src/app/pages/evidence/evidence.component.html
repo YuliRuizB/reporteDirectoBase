@@ -24,32 +24,53 @@
 </nz-page-header>
 <div>
   <h5>Filtros</h5>
-  <nz-select class="wide-select" style="width: 300px;" [(ngModel)]="selectEvidenceType"
-    (ngModelChange)="selectEvidenceTypeOption()" nzPlaceHolder="Selecciona un Tipo de Evidencia">
-    <nz-option [nzValue]="'Todos'" [nzLabel]="'Todos'" title="Todos"></nz-option>
-    <nz-option *ngFor="let evType of evidenceTypeList" [nzValue]="evType.uid" [nzLabel]="evType.name"
-      [title]="evType.name">
-    </nz-option>
-  </nz-select>
-  <button nz-button nzType="primary" (click)="exportToExcel()">📥 Exportar a Excel</button>
+  <div style="display: flex; align-items: center; gap: 16px;">
+     <nz-range-picker [(ngModel)]="dateRange" (ngModelChange)="applyFilters()" [nzFormat]="'dd/MM/yyyy'"  class="wide-range-picker"
+     >
+    </nz-range-picker>
+
+    <nz-select class="wide-select" style="width: 300px;" [(ngModel)]="selectWorkEvidenceType"
+      (ngModelChange)="selectWorkEvidenceTypeOption()" nzPlaceHolder="Selecciona un Tipo de Proyecto">
+      <nz-option [nzValue]="'Todos'" [nzLabel]="'Todos'" title="Todos"></nz-option>
+      <nz-option *ngFor="let evType of evidenceWorkTypeList" [nzValue]="evType.uid" [nzLabel]="evType.name"
+        [title]="evType.name">
+      </nz-option>
+    </nz-select>
+
+    <nz-select class="wide-select" style="width: 300px;" [(ngModel)]="selectEvidenceType"
+      (ngModelChange)="selectEvidenceTypeOption()" nzPlaceHolder="Selecciona un Tipo de Evidencia">
+      <nz-option [nzValue]="'Todos'" [nzLabel]="'Todos'" title="Todos"></nz-option>
+      <nz-option *ngFor="let evType of evidenceTypeList" [nzValue]="evType.uid" [nzLabel]="evType.name"
+        [title]="evType.name">
+      </nz-option>
+    </nz-select>   
+
+    <button nz-button nzType="primary" (click)="exportToPDF()">📥 Exportar a PDF</button>
+  </div>
+
 </div>
 <div style="margin-top: 10px;">
   <nz-table #basicTable [nzData]="filteredData">
     <thead>
       <tr>
+        <th>Fecha</th>
         <th>Nombre</th>
         <th>Titulo</th>
         <th>Ubicación</th>
+        <th>Proyecto</th>
         <th>Tipo</th>
         <th>Estatus</th>
+        <th>Proyecto</th>       
         <th>...</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let data of basicTable.data">
+        <td>{{ data.date | date:'dd/MM/yyyy'  }}</td>
         <td>{{ data.name }} {{ data.lastName}} {{ data.secondLastName}} </td>
         <td>{{ data.title }}</td>
         <td>{{ data.town }}, {{data.state}} </td>
+        <td>{{ data.evidenceWorkTypeName }} </td>
         <td>{{data.evidenceTypeName}}</td>
         <td>{{data.status}}</td>
         <td>
@@ -66,21 +87,26 @@
   [nzWidth]="'800px'" [nzContent]="modalContent" [nzFooter]="modalFooter">
   <ng-template #modalContent>
     <nz-tabset>
-      <nz-tab nzTitle="Evidencia" >
+      <nz-tab nzTitle="Evidencia">
         <div class="modal-grid">
-          <!-- Sección de Imagen -->
-          <div *ngIf="selectedData?.imageUrl" class="evidence-section">
-            <h5>Imagen de Evidencia</h5>
-            <img [src]="selectedData.imageUrl" alt="Evidencia" class="evidence-image" />
-          </div>
-          <!-- Sección de Audio -->
-          <div *ngIf="selectedData?.audioUrl" class="evidence-section">
-            <h5>Audio de Evidencia</h5>
-            <audio controls class="evidence-audio">
-              <source [src]="selectedData.audioUrl" type="audio/mpeg" />
-              Tu navegador no soporta la reproducción de audio.
-            </audio>
-          </div>
+          <nz-card nzTitle="Imágenes de Evidencia" style="width:600px;">
+
+            <div *ngIf="dataImages?.length" class="evidence-section">
+              <nz-carousel [nzEffect]="effect">
+                <div *ngFor="let img of dataImages">
+                  <img [src]="img.imageUrl" alt="Evidencia" class="evidence-image" />
+                </div>
+              </nz-carousel>
+            </div>
+            <!-- Sección de Audio -->
+            <div *ngIf="selectedData?.audioUrl" class="evidence-section">
+              <h5>Audio de Evidencia</h5>
+              <audio controls class="evidence-audio">
+                <source [src]="selectedData.audioUrl" type="audio/mpeg" />
+                Tu navegador no soporta la reproducción de audio.
+              </audio>
+            </div>
+          </nz-card>
           <nz-card nzTitle="Actualizar Evidencia" style="width:600px;">
             <!-- Actualizar Estatus -->
             <h7>Status Actual: {{selectedData?.status }} </h7>
@@ -117,13 +143,14 @@
               <h5>Descripción</h5>
               <textarea nz-input [(ngModel)]="description" placeholder="Ingresa la descripción" rows="4"></textarea>
             </div>
-        </nz-card>
-        <nz-card nzTitle="Información Extra" style="width:600px;">
-          <h5>Comentarios</h5>
-          <textarea nz-input [(ngModel)]="comments" placeholder="Ingresa un comentario (opcional)" rows="4"></textarea>
-          <h5>Costo</h5>
-          <input nz-input [(ngModel)]="cost" placeholder="Ingresa el costo (opcional)" />
-        </nz-card>
+          </nz-card>
+          <nz-card nzTitle="Información Extra" style="width:600px;">
+            <h5>Comentarios</h5>
+            <textarea nz-input [(ngModel)]="comments" placeholder="Ingresa un comentario (opcional)"
+              rows="4"></textarea>
+            <h5>Costo</h5>
+            <input nz-input [(ngModel)]="cost" placeholder="Ingresa el costo (opcional)" />
+          </nz-card>
         </div>
       </nz-tab>
       <nz-tab nzTitle="Historial">
@@ -145,7 +172,7 @@
               <td>{{ data.description}} </td>
               <td>{{data.comments}}</td>
               <td>{{data.cost}}</td>
-              <td>{{data.status}}</td>            
+              <td>{{data.status}}</td>
             </tr>
           </tbody>
         </nz-table>
